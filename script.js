@@ -30,7 +30,8 @@ document.getElementById('upload-area').addEventListener('drop', function(e) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const contents = e.target.result;
-        console.log(contents);
+        const emails = extractEmails(contents);
+        document.getElementById('emails').innerText = emails.join('\n');
     };
     reader.readAsText(file);
 });
