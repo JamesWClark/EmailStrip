@@ -1,6 +1,10 @@
 function extractEmails(contents) {
     const regex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-    return contents.match(regex);
+    const matches = contents.match(regex);
+    if (matches) {
+        return [...new Set(matches)];
+    }
+    return null;
 }
 
 document.getElementById('file-input').addEventListener('change', function(e) {
@@ -10,7 +14,6 @@ document.getElementById('file-input').addEventListener('change', function(e) {
     reader.onload = function(e) {
         const contents = e.target.result;
         const emails = extractEmails(contents);
-        console.log(emails);
         document.getElementById('emails').innerText = emails.join('\n');
     };
     reader.readAsText(file);
