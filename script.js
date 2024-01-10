@@ -1,4 +1,4 @@
-function extractEmails(contents) {
+function extractEmailsFromPlainText(contents) {
     const regex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
     const matches = contents.match(regex);
     if (matches) {
@@ -7,7 +7,7 @@ function extractEmails(contents) {
     return null;
 }
 
-function extractEmailsFromContents(contents) {
+function extractEmailsFromSpreadsheet(contents) {
     const emails = [];
     const regex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
     for (const row of contents) {
@@ -34,7 +34,7 @@ function handleFile(file) {
             for (const sheetName of workbook.SheetNames) {
                 const worksheet = workbook.Sheets[sheetName];
                 const contents = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                const sheetEmails = extractEmailsFromContents(contents);
+                const sheetEmails = extractEmailsFromSpreadsheet(contents);
                 emails.push(...sheetEmails);
             }
             const uniqueEmails = [...new Set(emails)]; // remove duplicates
@@ -49,7 +49,7 @@ function handleFile(file) {
     } else {
         reader.onload = function(e) {
             const contents = e.target.result;
-            const emails = extractEmails(contents);
+            const emails = extractEmailsFromPlainText(contents);
             document.getElementById('emails').innerText = emails.join('\n');
             navigator.clipboard.writeText(emails.join('\n')).then(function() {
                 console.log('Emails successfully copied to clipboard');
@@ -78,7 +78,7 @@ document.getElementById('file-input').addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const contents = e.target.result;
-        const emails = extractEmails(contents);
+        const emails = extractEmailsFromPlainText(contents);
         document.getElementById('emails').innerText = emails.join('\n');
     }
     reader.readAsText(file);
