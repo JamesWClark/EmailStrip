@@ -30,12 +30,16 @@ function handleFile(file) {
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const contents = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-            const emails = extractEmailsFromContents(contents);
-            document.getElementById('emails').innerText = emails.join('\n');
-            navigator.clipboard.writeText(emails.join('\n')).then(function() {
+            const emails = [];
+            for (const sheetName of workbook.SheetNames) {
+                const worksheet = workbook.Sheets[sheetName];
+                const contents = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                const sheetEmails = extractEmailsFromContents(contents);
+                emails.push(...sheetEmails);
+            }
+            const uniqueEmails = [...new Set(emails)]; // remove duplicates
+            document.getElementById('emails').innerText = uniqueEmails.join('\n');
+            navigator.clipboard.writeText(uniqueEmails.join('\n')).then(function() {
                 console.log('Emails successfully copied to clipboard');
             }, function() {
                 console.error('Failed to copy emails to clipboard');
