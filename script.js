@@ -24,28 +24,37 @@ function extractEmailsFromContents(contents) {
 
 function handleFile(file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
-        const fileExtension = file.name.split('.').pop().toLowerCase();
-        let emails;
-        if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             const contents = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-            emails = extractEmailsFromContents(contents);
-        } else {
+            const emails = extractEmailsFromContents(contents);
+            document.getElementById('emails').innerText = emails.join('\n');
+            navigator.clipboard.writeText(emails.join('\n')).then(function() {
+                console.log('Emails successfully copied to clipboard');
+            }, function() {
+                console.error('Failed to copy emails to clipboard');
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = function(e) {
             const contents = e.target.result;
-            emails = extractEmails(contents);
-        }
-        document.getElementById('emails').innerText = emails.join('\n');
-        navigator.clipboard.writeText(emails.join('\n')).then(function() {
-            console.log('Emails successfully copied to clipboard');
-        }, function() {
-            console.error('Failed to copy emails to clipboard');
-        });
-    };
-    reader.readAsArrayBuffer(file);
+            const emails = extractEmails(contents);
+            document.getElementById('emails').innerText = emails.join('\n');
+            navigator.clipboard.writeText(emails.join('\n')).then(function() {
+                console.log('Emails successfully copied to clipboard');
+            }, function() {
+                console.error('Failed to copy emails to clipboard');
+            });
+        };
+        reader.readAsText(file);
+    }
 }
 
 document.getElementById('upload-area').addEventListener('dragover', function(e) {
