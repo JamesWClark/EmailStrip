@@ -26,7 +26,61 @@ function handleFile(file) {
     const reader = new FileReader();
     const fileExtension = file.name.split('.').pop().toLowerCase();
 
-    if (fileExtension === 'zip') {
+    if (fileExtension === 'tar.gz') {
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const decompressedData = pako.inflate(data);
+            untar(decompressedData).then(function(files) {
+                files.forEach(function(file) {
+                    const text = new TextDecoder("utf-8").decode(file.buffer);
+                    handleFile(new File([text], file.name.replace('.tar.gz', '')));
+                });
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'tar') {
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            untar(data).then(function(files) {
+                files.forEach(function(file) {
+                    const text = new TextDecoder("utf-8").decode(file.buffer);
+                    handleFile(new File([text], file.name));
+                });
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'gz') {
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const decompressedData = pako.inflate(data);
+            const text = new TextDecoder("utf-8").decode(decompressedData);
+            handleFile(new File([text], file.name.replace('.gz', '')));
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'rar') {
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const archive = unrar.createArchive(data);
+            const entries = archive.getEntries();
+            entries.forEach(function(entry) {
+                const fileData = archive.extract(entry);
+                handleFile(new File([fileData], entry.name));
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === '7z') {
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            SevenZip.open(data).then(function(archive) {
+                archive.extractAll().then(function(files) {
+                    files.forEach(function(file) {
+                        handleFile(new File([file.data], file.name));
+                    });
+                });
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'zip') {
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             JSZip.loadAsync(data).then(function(zip) {
@@ -128,4 +182,20 @@ document.getElementById('file-input').addEventListener('change', function(e) {
 document.getElementById('clipboard-icon').addEventListener('click', function() {
     const emails = document.getElementById('emails').innerText;
     navigator.clipboard.writeText(emails);
+});
+
+window.addEventListener('paste', function(event) {
+    const clipboardData = event.clipboardData || window.clipboardData;
+
+    for (let i = 0; i < clipboardData.items.length; i++) {
+        const item = clipboardData.items[i];
+        if (item.kind === 'file') { // Handle file data
+            const file = item.getAsFile();
+            handleFile(file);
+        } else {     // Handle text data
+            const pastedData = clipboardData.getData('Text');
+            const emails = extractEmailsFromString(pastedData);
+            document.getElementById('emails').innerText = emails.join('\n');
+        }
+    }
 });
