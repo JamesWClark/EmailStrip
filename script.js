@@ -26,7 +26,19 @@ function handleFile(file) {
     const reader = new FileReader();
     const fileExtension = file.name.split('.').pop().toLowerCase();
 
-    if (fileExtension === 'xlsx' || fileExtension === 'xls' || fileExtension === 'ods') {
+    if (fileExtension === 'zip') {
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            JSZip.loadAsync(data).then(function(zip) {
+                zip.forEach(function(relativePath, zipEntry) {
+                    zipEntry.async('blob').then(function(content) {
+                        handleFile(new File([content], zipEntry.name));
+                    });
+                });
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'xlsx' || fileExtension === 'xls' || fileExtension === 'ods') {
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
